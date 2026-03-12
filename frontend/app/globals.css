@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #C9A84C;
+  --color-gold-light: #E2C975;
+  --color-gold-dark: #A68A3E;
+  --color-nav-bg: #000000;
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8F8F8;
+  --color-bg-card: #F5F5F5;
+  --color-border: #E5E5E5;
+  --color-text-primary: #111111;
+  --color-text-secondary: #666666;
+  --color-text-on-dark: #FFFFFF;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjQEl5f.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYWXhK.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/cormorantgaramond/v16/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYfXlK.woff2")
+    format("woff2");
+}
+
+body {
+  font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}

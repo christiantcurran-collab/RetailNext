@@ -1,0 +1,25 @@
+.git/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Backend secrets
+backend/.env
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/tsconfig.tsbuildinfo
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Large generated files (use embeddings.npy instead)
+data/sample_clothes/sample_styles_with_embeddings.csv
+data/sample_clothes/embeddings_checkpoint.json
+data/fashion-dataset/
+data/fashion_dl/
+data/kaggle_download/

@@ -1,0 +1,27 @@
+services:
+  # Python FastAPI backend
+  - type: web
+    name: retailnext-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+
+  # Next.js frontend
+  - type: web
+    name: retailnext-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npx next start --hostname 0.0.0.0 --port $PORT
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: retailnext-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL

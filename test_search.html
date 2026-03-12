@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Testing built by Codex</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; background: #fafafa; color: #222; }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    p.sub { color: #666; font-size: 0.85rem; margin-top: 0; margin-bottom: 24px; }
+    .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 28px; flex-wrap: wrap; }
+    input[type=text] { flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 4px; padding: 7px 10px; font-size: 0.85rem; }
+    button { padding: 8px 18px; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    #progress { font-size: 0.8rem; color: #666; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 18px 20px; margin-bottom: 16px; }
+    .card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .query { font-weight: 600; font-size: 0.95rem; }
+    .meta { font-size: 0.75rem; color: #888; }
+    .workflow { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .workflow-find { background: #e8f4fd; color: #1a6fba; }
+    .workflow-outfit { background: #f0f7ee; color: #2a7a2e; }
+    .workflow-error { background: #fdecea; color: #b71c1c; }
+    .item-row { font-size: 0.85rem; padding: 6px 0; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: baseline; }
+    .item-row:last-child { border-bottom: none; }
+    .rank { font-weight: 700; min-width: 24px; color: #555; }
+    .item-name { flex: 1; }
+    .item-price { color: #555; white-space: nowrap; }
+    .item-match { color: #888; font-size: 0.78rem; white-space: nowrap; }
+    .item-stock { font-size: 0.75rem; padding: 1px 7px; border-radius: 3px; white-space: nowrap; }
+    .stock-in { background: #e8f5e9; color: #2e7d32; }
+    .stock-low { background: #fff8e1; color: #f57f17; }
+    .stock-out { background: #fce4e4; color: #c62828; }
+    .no-results { font-size: 0.85rem; color: #b00; padding: 4px 0; }
+    .section-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #999; margin: 10px 0 4px; }
+    .slot-group { margin-bottom: 8px; }
+    .slot-name { font-size: 0.75rem; font-weight: 600; color: #444; text-transform: capitalize; margin-bottom: 3px; }
+    .loading { font-size: 0.85rem; color: #999; font-style: italic; }
+    textarea#phrases { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 0.82rem; border: 1px solid #ccc; border-radius: 4px; padding: 10px; min-height: 170px; resize: vertical; }
+  </style>
+</head>
+<body>
+  <h1>Testing built by Codex</h1>
+  <p class="sub">Run all saved tests or add a new one by typing a phrase below.</p>
+
+  <div class="controls">
+    <input type="text" id="newPhraseInput" placeholder="Add a new test phrase" />
+    <button id="addBtn" onclick="addPhrase()">Add test</button>
+    <button id="runBtn" onclick="runAll()">Run all tests</button>
+    <span id="progress"></span>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <label style="font-size:0.82rem;font-weight:600;display:block;margin-bottom:6px">Saved test phrases (one per line):</label>
+    <textarea id="phrases">black dress
+dress for a summer wedding
+men's wear for summer
+navy suit
+cocktail dress for a wedding
+casual summer outfit for the beach
+black leather jacket
+white sneakers
+formal outfit for a wedding
+floral midi skirt
+winter coat for cold weather
+gym workout clothes
+little black dress for a party</textarea>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const API = 'http://127.0.0.1:8000';
+
+    async function runAll() {
+      const btn = document.getElementById('runBtn');
+      const prog = document.getElementById('progress');
+      const container = document.getElementById('results');
+      const phrases = document.getElementById('phrases').value
+        .split('\n').map(s => s.trim()).filter(Boolean);
+
+      btn.disabled = true;
+      container.innerHTML = '';
+
+      // Create placeholder cards in order
+      const cards = phrases.map((phrase, i) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.id = `card-${i}`;
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="query">${escHtml(phrase)}</span>
+            <span class="loading">Running&hellip;</span>
+          </div>`;
+        container.appendChild(card);
+        return card;
+      });
+
+      let done = 0;
+      prog.textContent = `0 / ${phrases.length}`;
+
+      // Run sequentially to avoid overloading the local backend
+      for (const [i, phrase] of phrases.entries()) {
+        const card = cards[i];
+        try {
+          const form = new FormData();
+          form.append('description', phrase);
+
+          const res = await fetch(`${API}/api/search`, { method: 'POST', body: form });
+          if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+          let data = await res.json();
+
+          renderCard(card, phrase, data);
+        } catch (err) {
+          renderNoResults(card, phrase, err.message);
+        }
+        done++;
+        prog.textContent = `${done} / ${phrases.length}`;
+      }
+
+      btn.disabled = false;
+      prog.textContent = `Done — ${phrases.length} tests`;
+    }
+
+    function addPhrase() {
+      const input = document.getElementById('newPhraseInput');
+      const textarea = document.getElementById('phrases');
+      const phrase = input.value.trim();
+      if (!phrase) return;
+
+      const existing = textarea.value.trim();
+      textarea.value = existing ? `${existing}\n${phrase}` : phrase;
+      input.value = '';
+      input.focus();
+    }
+
+    function renderCard(card, phrase, data) {
+      const wf = data.workflow || 'unknown';
+      const isOutfit = wf === 'plan-outfit';
+      const needsGender = isOutfit && !!data.needs_gender;
+      const wfLabel = isOutfit ? 'plan-outfit' : 'find-item';
+      const wfClass = isOutfit ? 'workflow-outfit' : 'workflow-find';
+
+      let body = '';
+
+      if (needsGender) {
+        const context = [data.formality, data.occasion, data.season].filter(Boolean).join(' · ');
+        body += `<p class="no-results" style="color:#444">Needs gender confirmation before outfit build.</p>`;
+        if (context) body += `<div style="font-size:0.82rem;color:#555;margin-bottom:8px">${escHtml(context)}</div>`;
+
+        if ((data.women_items || []).length > 0) {
+          body += `<div class="section-label">Women preview</div>`;
+          data.women_items.slice(0, 3).forEach((item) => {
+            body += `<div class="item-row"><span class="item-name">${escHtml(item.description || '?')}</span></div>`;
+          });
+        }
+
+        if ((data.men_items || []).length > 0) {
+          body += `<div class="section-label">Men preview</div>`;
+          data.men_items.slice(0, 3).forEach((item) => {
+            body += `<div class="item-row"><span class="item-name">${escHtml(item.description || '?')}</span></div>`;
+          });
+        }
+      } else if (isOutfit) {
+        // Outfit workflow — keyed by category in data.outfit, ordered by data.item_order
+        const event = data.event || {};
+        const occasion = [event.formality, event.occasion, event.season].filter(Boolean).join(' · ');
+        if (occasion) body += `<div style="font-size:0.82rem;color:#555;margin-bottom:8px">${escHtml(occasion)}</div>`;
+
+        const outfit = data.outfit || {};
+        const order = data.item_order || Object.keys(outfit);
+        if (order.length === 0) {
+          body += `<p class="no-results">No slots returned.</p>`;
+        } else {
+          order.forEach(category => {
+            const slot = outfit[category];
+            if (!slot) return;
+            body += `<div class="slot-group"><div class="slot-name">${escHtml(category)}</div>`;
+            const items = slot.options || [];
+            if (items.length === 0) {
+              body += `<div style="font-size:0.82rem;color:#999">No results</div>`;
+            } else {
+              items.slice(0, 3).forEach((item, idx) => {
+                body += itemRow(item, idx + 1);
+              });
+            }
+            body += `</div>`;
+          });
+        }
+      } else {
+        // Find-item workflow
+        const results = data.results || [];
+        if (results.length === 0) {
+          body += `<p class="no-results">No results — backend returned empty (good if query is too vague or no match &ge;0.5 similarity).</p>`;
+        } else {
+          results.forEach((item, idx) => { body += itemRow(item, idx + 1); });
+        }
+      }
+
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="query">${escHtml(phrase)}</span>
+          <span class="meta">
+            <span class="workflow ${wfClass}">${wfLabel}</span>
+            ${data.description && data.description !== phrase ? `&nbsp;&ldquo;${escHtml(truncate(data.description, 80))}&rdquo;` : ''}
+          </span>
+        </div>
+        ${body}`;
+    }
+
+    function itemRow(item, rank) {
+      const nearest = item.stock?.nearest_with_stock;
+      let stockHtml = '';
+      if (nearest) {
+        const cls = nearest.stock <= 2 ? 'stock-low' : 'stock-in';
+        const label = nearest.stock <= 2 ? 'Low stock' : 'In stock';
+        stockHtml = `<span class="item-stock ${cls}">${label} · ${escHtml(nearest.neighborhood)}</span>`;
+      } else if (item.stock !== undefined) {
+        stockHtml = `<span class="item-stock stock-out">Out of stock</span>`;
+      }
+      const matchPct = item.match_pct != null ? `${item.match_pct}% match` : '';
+      return `<div class="item-row">
+        <span class="rank">${rank}.</span>
+        <span class="item-name">${escHtml(item.name || '?')}</span>
+        <span class="item-price">$${item.price ?? '—'}</span>
+        ${matchPct ? `<span class="item-match">${matchPct}</span>` : ''}
+        ${stockHtml}
+      </div>`;
+    }
+
+    function renderNoResults(card, phrase, msg) {
+      card.innerHTML = `
+        <div class="card-header">
+          <span class="query">${escHtml(phrase)}</span>
+          <span class="workflow workflow-error">no results</span>
+        </div>
+        <p class="no-results">No results.</p>
+        <p class="meta">${escHtml(msg || 'Request could not be completed.')}</p>`;
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function truncate(s, n) { return s.length > n ? s.slice(0, n) + '…' : s; }
+  </script>
+</body>
+</html>
