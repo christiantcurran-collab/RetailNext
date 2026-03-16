@@ -190,15 +190,8 @@ This repository includes a `render.yaml` for deploying both services on Render:
 
 The frontend reads `NEXT_PUBLIC_API_URL` from the backend service URL exposed by Render.
 
-## Demo talking points
 
-If you are using this repository for a demo or take-home presentation, the strongest points to highlight are:
 
-- one shared entry point supports both item search and outfit planning
-- image uploads and text queries both route into the same retrieval system
-- semantic retrieval is combined with lightweight business-aware ranking
-- item and outfit results can be refined conversationally
-- results are grounded in stock and store availability, not just semantic relevance
 
 ## Notes
 
